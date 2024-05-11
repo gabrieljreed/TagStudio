@@ -69,14 +69,14 @@ class FixUnlinkedEntriesModal(QWidget):
 
         self.refresh_button = QPushButton()
         self.refresh_button.setText("&Refresh")
-        self.refresh_button.clicked.connect(lambda: self.refresh_missing_files())
+        self.refresh_button.clicked.connect(self.refresh_missing_files)
 
         self.search_button = QPushButton()
         self.search_button.setText("&Search && Relink")
         self.relink_class = RelinkUnlinkedEntries(self.lib, self.driver)
-        self.relink_class.done.connect(lambda: self.refresh_missing_files())
-        self.relink_class.done.connect(lambda: self.driver.update_thumbs())
-        self.search_button.clicked.connect(lambda: self.relink_class.repair_entries())
+        self.relink_class.done.connect(self.refresh_missing_files)
+        self.relink_class.done.connect(self.driver.update_thumbs)
+        self.search_button.clicked.connect(self.relink_class.repair_entries)
 
         self.manual_button = QPushButton()
         self.manual_button.setText("&Manual Relink")
@@ -86,9 +86,9 @@ class FixUnlinkedEntriesModal(QWidget):
         self.delete_modal.done.connect(
             lambda: self.set_missing_count(len(self.lib.missing_files))
         )
-        self.delete_modal.done.connect(lambda: self.driver.update_thumbs())
+        self.delete_modal.done.connect(self.driver.update_thumbs)
         self.delete_button.setText("De&lete Unlinked Entries")
-        self.delete_button.clicked.connect(lambda: self.delete_modal.show())
+        self.delete_button.clicked.connect(self.delete_modal.show)
 
         # self.combo_box = QComboBox()
         # self.combo_box.setEditable(False)
@@ -147,18 +147,22 @@ class FixUnlinkedEntriesModal(QWidget):
             maximum=len(self.lib.entries),
         )
         pw.show()
-        iterator.value.connect(lambda v: pw.update_progress(v + 1))
+        
+        def update_iterator_progress(v):
+            pw.update_progress(v + 1)
+
+        iterator.value.connect(update_iterator_progress)
         # rmf.value.connect(lambda v: pw.update_label(f'Progress: {v}'))
         r = CustomRunnable(lambda: iterator.run())
         QThreadPool.globalInstance().start(r)
-        r.done.connect(
-            lambda: (
-                pw.hide(),
-                pw.deleteLater(),
-                self.set_missing_count(len(self.lib.missing_files)),
-                self.delete_modal.refresh_list(),
-            )
-        )
+
+        def runnable_done():
+            pw.hide()
+            pw.deleteLater()
+            self.set_missing_count(len(self.lib.missing_files))
+            self.delete_modal.refresh_list()
+
+        r.done.connect(runnable_done)
 
         # r = CustomRunnable(lambda: self.lib.refresh_missing_files(lambda v: self.update_scan_value(pb, v)))
         # r.done.connect(lambda: (pb.hide(), pb.deleteLater(), self.set_missing_count(len(self.lib.missing_files)), self.delete_modal.refresh_list()))

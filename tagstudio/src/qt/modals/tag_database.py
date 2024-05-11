@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+from functools import partial
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtWidgets import (
     QWidget,
@@ -132,7 +133,7 @@ class TagDatabasePanel(PanelWidget):
         )
         # self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
         # TODO Check Warning: Expected type 'BuildTagPanel', got 'PanelWidget' instead
-        self.edit_modal.saved.connect(lambda: self.edit_tag_callback(btp))
+        self.edit_modal.saved.connect(partial(self.edit_tag_callback, btp))
         self.edit_modal.show()
 
     def edit_tag_callback(self, btp: BuildTagPanel):

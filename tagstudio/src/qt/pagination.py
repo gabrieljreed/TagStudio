@@ -5,6 +5,8 @@
 """A pagination widget created for TagStudio."""
 # I never want to see this code again.
 
+from functools import partial
+
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
@@ -605,7 +607,7 @@ class Pagination(QWidget, QObject):
             button.clicked.disconnect()
         except RuntimeError:
             pass
-        button.clicked.connect(lambda checked=False, i=index: self._goto_page(i))
+        button.clicked.connect(partial(self._goto_page, index))
 
     def _populate_buffer_buttons(self):
         for i in range(max(self.buffer_page_count * 2, 5)):

@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+from functools import partial
 from types import FunctionType
 
 from PySide6.QtCore import Signal, Qt
@@ -84,7 +85,9 @@ class PanelModal(QWidget):
                 )
             self.button_layout.addWidget(self.save_button)
 
-        widget.done.connect(lambda: save_callback(widget.get_content()))
+        if save_callback:
+            breakpoint()
+            widget.done.connect(partial(save_callback, widget.get_content()))
 
         self.root_layout.addWidget(self.title_widget)
         self.root_layout.addWidget(widget)

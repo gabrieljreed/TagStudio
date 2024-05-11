@@ -6,6 +6,7 @@
 import logging
 import math
 
+from functools import partial
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtWidgets import (
     QWidget,
@@ -146,7 +147,10 @@ class TagSearchPanel(PanelWidget):
                 f"}}"
             )
 
-            ab.clicked.connect(lambda checked=False, x=tag_id: self.tag_chosen.emit(x))
+            def emit_tag(tag_id):
+                self.tag_chosen.emit(tag_id)
+
+            ab.clicked.connect(partial(emit_tag, tag_id))
 
             l.addWidget(tw)
             l.addWidget(ab)

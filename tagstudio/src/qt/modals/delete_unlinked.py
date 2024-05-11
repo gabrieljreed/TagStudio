@@ -63,7 +63,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.delete_button = QPushButton()
         self.delete_button.setText("&Delete")
         self.delete_button.clicked.connect(self.hide)
-        self.delete_button.clicked.connect(lambda: self.delete_entries())
+        self.delete_button.clicked.connect(self.delete_entries)
         self.button_layout.addWidget(self.delete_button)
 
         self.root_layout.addWidget(self.desc_widget)
@@ -89,8 +89,8 @@ class DeleteUnlinkedEntriesModal(QWidget):
         # pb.show()
 
         # r = CustomRunnable(lambda: self.lib.ref(pb))
-        # r.done.connect(lambda: self.done.emit())
-        # # r.done.connect(lambda: self.model.clear())
+        # r.done.connect(self.done.emit)
+        # # r.done.connect(self.model.clear)
         # QThreadPool.globalInstance().start(r)
         # # r.run()
 
@@ -105,19 +105,22 @@ class DeleteUnlinkedEntriesModal(QWidget):
         )
         pw.show()
 
-        iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
-        iterator.value.connect(
-            lambda x: pw.update_label(
-                f"Deleting {x[0]+1}/{len(self.lib.missing_files)} Unlinked Entries"
-            )
-        )
-        iterator.value.connect(
-            lambda x: self.driver.purge_item_from_navigation(ItemType.ENTRY, x[1])
-        )
+        def iterator_update(x):
+            pw.update_progress(x[0] + 1)
+            pw.update_label(f"Deleting {x[0] + 1}/{len(self.lib.missing_files)} Unlinked Entries")
+            self.driver.purge_item_from_navigation(ItemType.ENTRY, x[1])
+
+        iterator.value.connect(iterator_update)
 
         r = CustomRunnable(lambda: iterator.run())
         QThreadPool.globalInstance().start(r)
-        r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.done.emit()))
+
+        def handle_done():
+            pw.hide()
+            pw.deleteLater()
+            self.done.emit()
+
+        r.done.connect(handle_done)
 
     # def delete_entries_runnable(self):
     # 	deleted = []

@@ -116,7 +116,16 @@ class BuildTagPanel(PanelWidget):
         self.subtags_add_button = QPushButton()
         self.subtags_add_button.setText("+")
         tsp = TagSearchPanel(self.lib)
-        tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
+
+        def add_subtag(x):
+            """Add a subtag to the tag.
+
+            Args:
+                x (int): The tag id to add.
+            """
+            self.add_subtag_callback(x)
+
+        tsp.tag_chosen.connect(add_subtag)
         self.add_tag_modal = PanelModal(tsp, "Add Subtags", "Add Subtags")
         self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
         self.subtags_layout.addWidget(self.subtags_add_button)

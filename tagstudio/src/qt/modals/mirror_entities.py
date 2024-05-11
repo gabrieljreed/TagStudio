@@ -65,7 +65,7 @@ class MirrorEntriesModal(QWidget):
         self.mirror_button = QPushButton()
         self.mirror_button.setText("&Mirror")
         self.mirror_button.clicked.connect(self.hide)
-        self.mirror_button.clicked.connect(lambda: self.mirror_entries())
+        self.mirror_button.clicked.connect(self.mirror_entries)
         self.button_layout.addWidget(self.mirror_button)
 
         self.root_layout.addWidget(self.desc_widget)
@@ -106,12 +106,17 @@ class MirrorEntriesModal(QWidget):
             maximum=len(self.lib.dupe_files),
         )
         pw.show()
-        iterator.value.connect(lambda x: pw.update_progress(x + 1))
-        iterator.value.connect(
-            lambda x: pw.update_label(
-                f"Mirroring {x+1}/{len(self.lib.dupe_files)} Entries..."
-            )
-        )
+
+        def update_iterator(x):
+            """Update the progress widget with the current progress.
+
+            Args:
+                x (int): The current progress.
+            """
+            pw.update_progress(x + 1)
+            pw.update_label(f"Mirroring {x + 1}/{len(self.lib.dupe_files)} Entries...")
+
+        iterator.value.connect(update_iterator)
         r = CustomRunnable(lambda: iterator.run())
         QThreadPool.globalInstance().start(r)
         r.done.connect(

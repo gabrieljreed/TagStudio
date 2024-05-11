@@ -82,9 +82,9 @@ class PreviewPanel(QWidget):
         image_layout = QHBoxLayout(self.image_container)
         image_layout.setContentsMargins(0, 0, 0, 0)
 
-        splitter = QSplitter()
-        splitter.setOrientation(Qt.Orientation.Vertical)
-        splitter.setHandleWidth(12)
+        self.splitter = QSplitter()
+        self.splitter.setOrientation(Qt.Orientation.Vertical)
+        self.splitter.setHandleWidth(12)
 
         self.open_file_action = QAction("Open file", self)
         self.open_explorer_action = QAction("Open file in explorer", self)
@@ -98,29 +98,13 @@ class PreviewPanel(QWidget):
         self.preview_img.addAction(self.open_explorer_action)
 
         self.tr = ThumbRenderer()
-        self.tr.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
-        self.tr.updated_ratio.connect(
-            lambda ratio: (
-                self.set_image_ratio(ratio),
-                self.update_image_size(
-                    (
-                        self.image_container.size().width(),
-                        self.image_container.size().height(),
-                    ),
-                    ratio,
-                ),
-            )
-        )
 
-        splitter.splitterMoved.connect(
-            lambda: self.update_image_size(
-                (
-                    self.image_container.size().width(),
-                    self.image_container.size().height(),
-                )
-            )
-        )
-        splitter.addWidget(self.image_container)
+        self.tr.updated.connect(self.update_thumb_renderer)
+
+        self.tr.updated_ratio.connect(self.update_ratio)
+
+        self.splitter.splitterMoved.connect(self.update_splitter)
+        self.splitter.addWidget(self.image_container)
 
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
@@ -193,10 +177,10 @@ class PreviewPanel(QWidget):
         info_layout.addWidget(self.file_label)
         info_layout.addWidget(self.dimensions_label)
         info_layout.addWidget(scroll_area)
-        splitter.addWidget(info_section)
+        self.splitter.addWidget(info_section)
 
-        root_layout.addWidget(splitter)
-        splitter.setStretchFactor(1, 2)
+        root_layout.addWidget(self.splitter)
+        self.splitter.setStretchFactor(1, 2)
 
         self.afb_container = QWidget()
         self.afb_layout = QVBoxLayout(self.afb_container)
@@ -243,6 +227,19 @@ class PreviewPanel(QWidget):
         )
         return super().resizeEvent(event)
 
+    def update_thumb_renderer(self, ts, i, s):
+        """Updates the preview image with a new thumbnail."""
+        self.preview_img.setIcon(i)
+
+    def update_splitter(self):
+        """Updates the preview image size when the splitter is moved."""
+        self.update_image_size(
+            (
+                self.image_container.size().width(),
+                self.image_container.size().height(),
+            )
+        )
+
     def get_preview_size(self) -> tuple[int, int]:
         return (
             self.image_container.size().width(),
@@ -252,6 +249,18 @@ class PreviewPanel(QWidget):
     def set_image_ratio(self, ratio: float):
         # logging.info(f'Updating Ratio to: {ratio} #####################################################')
         self.image_ratio = ratio
+
+    def update_ratio(self, ratio: float):
+        """Updates the image ratio and resizes the preview image.
+
+        Args:
+            ratio (float): The aspect ratio of the image.
+        """
+        self.set_image_ratio(ratio)
+        self.update_image_size(
+            (self.image_container.size().width(), self.image_container.size().height()),
+            ratio,
+        )
 
     def update_image_size(self, size: tuple[int, int], ratio: float = None):
         if ratio:

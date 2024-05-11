@@ -7,6 +7,7 @@ import logging
 import math
 import typing
 
+from functools import partial
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget,
@@ -192,10 +193,10 @@ class FoldersToTagsModal(QWidget):
 
         self.open_all_button = QPushButton()
         self.open_all_button.setText("Open All")
-        self.open_all_button.clicked.connect(lambda: self.set_all_branches(False))
+        self.open_all_button.clicked.connect(partial(self.set_all_branches, False))
         self.close_all_button = QPushButton()
         self.close_all_button.setText("Close All")
-        self.close_all_button.clicked.connect(lambda: self.set_all_branches(True))
+        self.close_all_button.clicked.connect(partial(self.set_all_branches, True))
 
         self.open_close_button_layout.addWidget(self.open_all_button)
         self.open_close_button_layout.addWidget(self.close_all_button)
@@ -265,7 +266,7 @@ class TreeItem(QWidget):
         self.label = QLabel()
         self.tag_layout.addWidget(self.label)
         self.tag_widget = ModifiedTagWidget(data["tag"], parentTag)
-        self.tag_widget.bg_button.clicked.connect(lambda: self.hide_show())
+        self.tag_widget.bg_button.clicked.connect(self.hide_show)
         self.tag_layout.addWidget(self.tag_widget)
 
         self.children_widget = QWidget()

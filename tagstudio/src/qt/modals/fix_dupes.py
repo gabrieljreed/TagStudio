@@ -80,13 +80,13 @@ class FixDupeFilesModal(QWidget):
 
         self.open_button = QPushButton()
         self.open_button.setText("&Load DupeGuru File")
-        self.open_button.clicked.connect(lambda: self.select_file())
+        self.open_button.clicked.connect(self.select_file)
 
         self.mirror_button = QPushButton()
         self.mirror_modal = MirrorEntriesModal(self.lib, self.driver)
-        self.mirror_modal.done.connect(lambda: self.refresh_dupes())
+        self.mirror_modal.done.connect(self.refresh_dupes)
         self.mirror_button.setText("&Mirror Entries")
-        self.mirror_button.clicked.connect(lambda: self.mirror_modal.show())
+        self.mirror_button.clicked.connect(self.mirror_modal.show)
         self.mirror_desc = QLabel()
         self.mirror_desc.setWordWrap(True)
         self.mirror_desc.setText(

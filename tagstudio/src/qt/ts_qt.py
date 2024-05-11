@@ -14,6 +14,7 @@ import os
 import sys
 import time
 from datetime import datetime as dt
+from functools import partial
 from pathlib import Path
 from queue import Empty, Queue
 from typing import Optional
@@ -238,7 +239,7 @@ class QtDriver(QObject):
         self.setup_signals()
         timer = QTimer()
         timer.start(500)
-        timer.timeout.connect(lambda: None)
+        timer.timeout.connect(None)
 
         # self.main_window = loader.load(home_path)
         self.main_window = Ui_MainWindow()
@@ -277,7 +278,7 @@ class QtDriver(QObject):
         # file_menu.addAction(QAction('&Open Library', menu_bar))
 
         open_library_action = QAction("&Open/Create Library", menu_bar)
-        open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
+        open_library_action.triggered.connect(self.open_library_from_dialog)
         open_library_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
@@ -319,7 +320,7 @@ class QtDriver(QObject):
         file_menu.addSeparator()
 
         # refresh_lib_action = QAction('&Refresh Directories', self.main_window)
-        # refresh_lib_action.triggered.connect(lambda: self.lib.refresh_dir())
+        # refresh_lib_action.triggered.connect(self.lib.refresh_dir)
         add_new_files_action = QAction("&Refresh Directories", menu_bar)
         add_new_files_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
@@ -337,12 +338,12 @@ class QtDriver(QObject):
         file_menu.addSeparator()
 
         close_library_action = QAction("&Close Library", menu_bar)
-        close_library_action.triggered.connect(lambda: self.close_library())
+        close_library_action.triggered.connect(self.close_library)
         file_menu.addAction(close_library_action)
 
         # Edit Menu ============================================================
         new_tag_action = QAction("New &Tag", menu_bar)
-        new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
+        new_tag_action.triggered.connect(self.add_tag_action_callback)
         new_tag_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
@@ -361,22 +362,22 @@ class QtDriver(QObject):
         edit_menu.addAction(manage_file_extensions_action)
 
         tag_database_action = QAction("Tag Database", menu_bar)
-        tag_database_action.triggered.connect(lambda: self.show_tag_database())
+        tag_database_action.triggered.connect(self.show_tag_database)
         edit_menu.addAction(tag_database_action)
 
         # Tools Menu ===========================================================
         fix_unlinked_entries_action = QAction("Fix &Unlinked Entries", menu_bar)
         fue_modal = FixUnlinkedEntriesModal(self.lib, self)
-        fix_unlinked_entries_action.triggered.connect(lambda: fue_modal.show())
+        fix_unlinked_entries_action.triggered.connect(fue_modal.show)
         tools_menu.addAction(fix_unlinked_entries_action)
 
         fix_dupe_files_action = QAction("Fix Duplicate &Files", menu_bar)
         fdf_modal = FixDupeFilesModal(self.lib, self)
-        fix_dupe_files_action.triggered.connect(lambda: fdf_modal.show())
+        fix_dupe_files_action.triggered.connect(fdf_modal.show)
         tools_menu.addAction(fix_dupe_files_action)
 
         create_collage_action = QAction("Create Collage", menu_bar)
-        create_collage_action.triggered.connect(lambda: self.create_collage())
+        create_collage_action.triggered.connect(self.create_collage)
         tools_menu.addAction(create_collage_action)
 
         # Macros Menu ==========================================================
@@ -412,7 +413,7 @@ class QtDriver(QObject):
 
         folders_to_tags_action = QAction("Folders to Tags", menu_bar)
         ftt_modal = FoldersToTagsModal(self.lib, self)
-        folders_to_tags_action.triggered.connect(lambda: ftt_modal.show())
+        folders_to_tags_action.triggered.connect(ftt_modal.show)
         macros_menu.addAction(folders_to_tags_action)
 
         self.set_macro_menu_viability()
@@ -621,7 +622,12 @@ class QtDriver(QObject):
         self.modal = PanelModal(
             panel, "Ignored File Extensions", "Ignored File Extensions", has_save=True
         )
-        self.modal.saved.connect(lambda: (panel.save(), self.filter_items("")))
+
+        def on_modal_saved():
+            panel.save()
+            self.filter_items("")
+
+        self.modal.saved.connect(on_modal_saved)
         self.modal.show()
 
     def add_new_files_callback(self):
@@ -677,12 +683,19 @@ class QtDriver(QObject):
             maximum=0,
         )
         pw.show()
-        iterator.value.connect(lambda x: pw.update_progress(x + 1))
-        iterator.value.connect(
-            lambda x: pw.update_label(
+
+        def update_iterator(x):
+            """Updates the ProgressWidget with the current progress.
+
+            Args:
+                x (int): The current progress value.
+            """
+            pw.update_progress(x + 1)
+            pw.update_label(
                 f'Scanning Directories for New Files...\n{x+1} File{"s" if x+1 != 1 else ""} Searched, {len(self.lib.files_not_in_library)} New Files Found'
             )
-        )
+
+        iterator.value.connect(update_iterator)
         r = CustomRunnable(lambda: iterator.run())
         # r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.filter_items('')))
         # vvv This one runs the macros when adding new files to the library.
@@ -728,14 +741,23 @@ class QtDriver(QObject):
             maximum=0,
         )
         pw.show()
-        iterator.value.connect(lambda x: pw.update_progress(x + 1))
-        iterator.value.connect(
-            lambda x: pw.update_label(
-                f"Running Configured Macros on {x+1}/{len(new_ids)} New Entries"
+
+        def update_iterator(x):
+            pw.update_progress(x + 1)
+            pw.update_label(
+                f"Running Configured Macros on {x + 1}/{len(new_ids)} New Entries"
             )
-        )
+
+        iterator.value.connect(update_iterator)
+
         r = CustomRunnable(lambda: iterator.run())
-        r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.filter_items("")))
+
+        def runnable_done():
+            pw.hide()
+            pw.deleteLater()
+            self.filter_items("")
+
+        r.done.connect(runnable_done)
         QThreadPool.globalInstance().start(r)
 
     def new_file_macros_runnable(self, new_ids):
@@ -1409,7 +1431,7 @@ class QtDriver(QObject):
                             image, (y * thumb_size, x * thumb_size)
                         )
                     )
-                    renderer.done.connect(lambda: self.try_save_collage(True))
+                    renderer.done.connect(partial(self.try_save_collage, True))
                     self.thumb_job_queue.put(
                         (
                             renderer.render,

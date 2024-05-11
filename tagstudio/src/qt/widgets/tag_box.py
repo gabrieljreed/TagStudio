@@ -6,6 +6,7 @@
 import logging
 import math
 import typing
+from functools import partial
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QPushButton
@@ -134,7 +135,7 @@ class TagBoxWidget(FieldWidget):
         )
         # self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
         panel: BuildTagPanel = self.edit_modal.widget
-        self.edit_modal.saved.connect(lambda: self.lib.update_tag(btp.build_tag()))
+        self.edit_modal.saved.connect(partial(self.lib.update_tab, btp.build_tag()))
         # panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
         self.edit_modal.show()
 

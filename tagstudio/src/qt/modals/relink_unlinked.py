@@ -50,15 +50,18 @@ class RelinkUnlinkedEntries(QObject):
         )
         pw.show()
 
-        iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
-        iterator.value.connect(
-            lambda x: (
-                self.increment_fixed() if x[1] else (),
-                pw.update_label(
-                    f"Attempting to Relink {x[0]+1}/{len(self.lib.missing_files)} Entries, {self.fixed} Successfully Relinked"
-                ),
-            )
-        )
+        def update_iterator(x):
+            """Update the progress widget with the current progress.
+
+            Args:
+                x (int): The current progress.
+            """
+            pw.update_progress(x[0] + 1)
+            self.increment_fixed() if x[1] else (),
+            pw.update_label(f"Attempting to Relink {x[0] + 1}/{len(self.lib.missing_files)} Entries, {self.fixed} \
+                            Successfully Relinked")
+
+        iterator.value.connect(update_iterator)
         # iterator.value.connect(lambda x: self.driver.purge_item_from_navigation(ItemType.ENTRY, x[1]))
 
         r = CustomRunnable(lambda: iterator.run())
